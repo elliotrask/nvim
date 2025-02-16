@@ -50,25 +50,20 @@ return { -- Fuzzy Finder (files, lsp, etc)
       --
       defaults = {
         file_ignore_patterns = {
-          '%/Pods/',
-          '.git',
+          'Pods/',
+          '.git/',
         },
-        vimgrep_arguments = {
-          'rg',
-          '--color=never',
-          '--no-heading',
-          '--with-filename',
-          '--line-number',
-          '--column',
-          '--smart-case',
-        },
-        --   mappings = {
-        --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-        --   },
       },
       pickers = {
         find_files = {
           hidden = true,
+        },
+        buffers = {
+          mappings = {
+            n = {
+              ['dd'] = require('telescope.actions').delete_buffer,
+            },
+          },
         },
       },
       extensions = {
@@ -87,7 +82,7 @@ return { -- Fuzzy Finder (files, lsp, etc)
     vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
     vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
     vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
-    vim.keymap.set('n', '<leader>sc', builtin.git_files, { desc = '[S]earch [G]it files' })
+    -- vim.keymap.set('n', '<leader>sc', builtin.git_files, { desc = '[S]earch [G]it files' })
     vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
     vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
     vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = '[S]earch by [G]rep' })
@@ -115,8 +110,29 @@ return { -- Fuzzy Finder (files, lsp, etc)
     end, { desc = '[S]earch [/] in Open Files' })
 
     -- Shortcut for searching your Neovim configuration files
-    vim.keymap.set('n', '<leader>sn', function()
-      builtin.find_files { cwd = vim.fn.stdpath 'config' }
-    end, { desc = '[S]earch [N]eovim files' })
+    -- vim.keymap.set('n', '<leader>sn', function()
+    --   builtin.find_files { cwd = vim.fn.stdpath 'config' }
+    -- end, { desc = '[S]earch [N]eovim files' })
+
+    vim.keymap.set('n', '<leader>scg', function()
+      builtin.live_grep {
+        cwd = require('telescope.utils').buffer_dir(),
+        prompt_title = 'Live Grep in current folder',
+      }
+    end, { desc = '[S]earch [C]urrent folder by [G]rep' })
+
+    vim.keymap.set('n', '<leader>scw', function()
+      builtin.live_grep {
+        cwd = require('telescope.utils').buffer_dir(),
+        prompt_title = 'Search current word in current folder',
+      }
+    end, { desc = '[S]earch [C]urrent folder by current [W]ord' })
+
+    vim.keymap.set('n', '<leader>scf', function()
+      builtin.find_files {
+        cwd = require('telescope.utils').buffer_dir(),
+        prompt_title = 'Search files in current folder',
+      }
+    end, { desc = '[S]earch [C]urrent folder for [F]iles' })
   end,
 }
