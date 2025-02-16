@@ -134,9 +134,29 @@ return { -- LSP Configuration & Plugins
       group = vim.api.nvim_create_augroup('kickstart-lsp-detach', { clear = true }),
       callback = function(event)
         vim.lsp.buf.clear_references()
-        vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event.buf }
+        local client = vim.lsp.get_client_by_id(event.data.client_id)
+        if client and client.server_capabilities.documentHighlightProvider then
+          vim.api.nvim_clear_autocmds { group = 'kickstart-lsp-highlight', buffer = event.buf }
+        end
       end,
     })
+
+    vim.api.nvim_create_autocmd('FileType', {
+      pattern = 'ruby',
+      callback = function()
+        vim.lsp.start {
+          name = 'rubocop',
+          cmd = { 'bundle', 'exec', 'rubocop', '--lsp' },
+        }
+      end,
+    })
+    --
+    -- vim.api.nvim_create_autocmd('BufWritePre', {
+    --   pattern = '*.rb',
+    --   callback = function()
+    --     vim.lsp.buf.format()
+    --   end,
+    -- })
 
     -- LSP servers and clients are able to communicate to each other what features they support.
     --  By default, Neovim doesn't support everything that is in the LSP specification.
@@ -144,6 +164,38 @@ return { -- LSP Configuration & Plugins
     --  So, we create new capabilities with nvim cmp, and then broadcast that to the servers.
     local capabilities = vim.lsp.protocol.make_client_capabilities()
     capabilities = vim.tbl_deep_extend('force', capabilities, require('cmp_nvim_lsp').default_capabilities())
+
+    local function add_ruby_deps_command(client, bufnr)
+      vim.api.nvim_buf_create_user_command(bufnr, 'ShowRubyDeps', function(opts)
+        local params = vim.lsp.util.make_text_document_params()
+        local showAll = opts.args == 'all'
+
+        client.request('rubyLsp/workspace/dependencies', params, function(error, result)
+          if error then
+            print('Error showing deps: ' .. error)
+            return
+          end
+
+          local qf_list = {}
+          for _, item in ipairs(result) do
+            if showAll or item.dependency then
+              table.insert(qf_list, {
+                text = string.format('%s (%s) - %s', item.name, item.version, item.dependency),
+                filename = item.path,
+              })
+            end
+          end
+
+          vim.fn.setqflist(qf_list)
+          vim.cmd 'copen'
+        end, bufnr)
+      end, {
+        nargs = '?',
+        complete = function()
+          return { 'all' }
+        end,
+      })
+    end
 
     -- Enable the following language servers
     --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
@@ -158,14 +210,14 @@ return { -- LSP Configuration & Plugins
       -- clangd = {},
       gopls = {},
       -- pyright = {},
-      -- rust_analyzer = {},
+      rust_analyzer = {},
       -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
       --
       -- Some languages (like typescript) have entire language plugins that can be useful:
       --    https://github.com/pmizio/typescript-tools.nvim
       --
       -- But for many setups, the LSP (`tsserver`) will work just fine
-      tsserver = {},
+      ts_ls = {},
       --
 
       lua_ls = {
@@ -184,6 +236,15 @@ return { -- LSP Configuration & Plugins
       },
       -- ['csharp_ls@0.6.0'] = {},
       rubocop = {},
+      ruby_lsp = {
+        on_attach = function(client, buffer)
+          add_ruby_deps_command(client, buffer)
+        end,
+      },
+      marksman = { filetype = { 'markdown', 'markdown.mdx', 'org' } },
+      html = {},
+      terraformls = {},
+      templ = {},
     }
 
     -- Ensure the servers and tools above are installed
@@ -203,6 +264,8 @@ return { -- LSP Configuration & Plugins
     require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
     require('mason-lspconfig').setup {
+      ensure_installed = {},
+      automatic_installation = true,
       handlers = {
         function(server_name)
           local server = servers[server_name] or {}
