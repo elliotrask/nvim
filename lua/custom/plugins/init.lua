@@ -7,4 +7,5 @@ return {
   'tpope/vim-sleuth',
 
   -- 'windwp/nvim-ts-autotag',
+  'github/copilot.vim',
 }
