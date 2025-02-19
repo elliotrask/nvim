@@ -46,6 +46,7 @@ vim.keymap.set('v', '<S-up>', ":m '<-2<CR>gv=gv")
 
 -- System clipboard shortcut
 vim.keymap.set('n', '<leader>y', [["+y]], { desc = '[Y]ank to system clipboard' })
+vim.keymap.set('n', '<leader>Y', [["+Y]], { desc = '[Y]ank rest of line to system clipboard' })
 vim.keymap.set('n', '<leader>p', [["+p]], { desc = '[P]aste from system clipboard' })
 vim.keymap.set('v', '<leader>y', [["+y]], { desc = '[Y]ank to system clipboard' })
 vim.keymap.set('v', '<leader>p', [["+p]], { desc = '[P]aste from system clipboard' })
